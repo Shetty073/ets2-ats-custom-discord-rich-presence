@@ -77,7 +77,13 @@ def get_state():
 
 
 try:
-    client_id = "client_id"
+    raw_data = get_data()
+    game_data = raw_data["game"]
+    if game_data["gameName"] == "ETS2":
+        client_id = "ets2_app_client_id" # This ID is the Discord ETS2 rich presence App client ID from discord developer portal
+    elif game_data["gameName"] == "ATS":
+        client_id = "ats_app_client_id" # This ID is the Discord ATS rich presence App client ID from discord developer portal
+    # The reason for different client_ids is this will show which game you are playing ETS 2 or ATS without the need for seaparate scripts for both
     RPC = Presence(client_id)
     RPC.connect()
     print("Running...\nYou can close this window after you finish playing ETS 2 or ATS...")
