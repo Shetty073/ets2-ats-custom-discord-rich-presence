@@ -13,12 +13,12 @@ print("\n"
       "  please make sure that ETS2/ATS telemetry server is running\n"
       "  before you opened this file..\n"
       "\n"
-      "  https://github.com/Shetty073/ets2-custom-discord-rich-presence\n")
+      "  https://github.com/Shetty073/ets2-ats-custom-discord-rich-presence\n")
 
 
 def get_data():
     try:
-        response = req.get("http://192.168.0.100:25555/api/ets2/telemetry")
+        response = req.get("http://localhost:25555/api/ets2/telemetry")
         raw_data = json.loads(response.content)
         return raw_data
     except Exception as e:
@@ -28,6 +28,22 @@ def get_data():
               "running this application.\n")
         input("Press enter key to exit....")
         exit(1)
+
+
+def start():
+    raw_data = get_data()
+    game_data = raw_data["game"]
+    if game_data["gameName"]:
+        if game_data["gameName"] == "ETS2":
+            client_id = "ETS2_client_id"  # App client ID from discord developer portal
+        elif game_data["gameName"] == "ATS":
+            client_id = "ATS_client_id"  # App client ID from discord developer portal
+        print(f'{game_data["gameName"]} connected...')
+        run(client_id)
+    else:
+        print("Waiting for game to connect...")
+        time.sleep(3.5)
+        start()
 
 
 def get_details():
@@ -55,7 +71,7 @@ def get_state():
     truck_data = raw_data["truck"]
 
     if not game_data["connected"]:
-        state = "Waiting for process to hook"
+        state = "Waiting for simulator to load"
     else:
         if game_data["paused"]:
             state = "Driver drinking coffee"
@@ -76,26 +92,29 @@ def get_state():
     return state
 
 
-try:
-    raw_data = get_data()
-    game_data = raw_data["game"]
-    if game_data["gameName"] == "ETS2":
-        client_id = "ets2_app_client_id" # This ID is the Discord ETS2 rich presence App client ID from discord developer portal
-    elif game_data["gameName"] == "ATS":
-        client_id = "ats_app_client_id" # This ID is the Discord ATS rich presence App client ID from discord developer portal
-    # The reason for different client_ids is this will show which game you are playing ETS 2 or ATS without the need for seaparate scripts for both
-    RPC = Presence(client_id)
-    RPC.connect()
-    print("Running...\nYou can close this window after you finish playing ETS 2 or ATS...")
-    while True:
-        RPC.update(state=get_state(), details=get_details(), large_image="Euro Truck Simulator 2",
-                   large_text="Large Text Here!",
-                   small_image="small-image", small_text="Small Text Here!")
-        time.sleep(0.1)
-except Exception as e:
-    logging.basicConfig(filename='error.log', level=logging.INFO)
-    logging.error(f"\nFatal error: \n{str(e)}\nPlease make sure that Discord is open and running...")
-    print("\nFatal error: Please make sure that Discord is open before "
-          "running this application.\n")
-    input("Press enter key to exit....")
-    exit(1)
+def run(client_id):
+    try:
+        RPC = Presence(client_id)
+        RPC.connect()
+        print("Running...\n"
+              "NOTE:\n"
+              "If you are playing ETS 2 and want to start playing ATS (or vice-versa) then "
+              "after closing ETS 2 and before starting ATS you must RESTART this application ALONG WITH the ETS 2 "
+              "TELEMETRY SERVER also.\n"
+              "Close this window once you are done playing the game...")
+        while True:
+            # Image section needs to be updated
+            RPC.update(state=get_state(), details=get_details(), large_image="Euro Truck Simulator 2",
+                       large_text="Large Text Here!",
+                       small_image="small-image", small_text="Small Text Here!")
+            time.sleep(0.1)
+    except Exception as e:
+        logging.basicConfig(filename='error.log', level=logging.INFO)
+        logging.error(f"\nFatal error: \n{str(e)}\nPlease make sure that Discord is open and running...")
+        print("\nFatal error: Please make sure that Discord is open before "
+              "running this application.\n")
+        input("Press enter key to exit....")
+        exit(1)
+
+
+start()
